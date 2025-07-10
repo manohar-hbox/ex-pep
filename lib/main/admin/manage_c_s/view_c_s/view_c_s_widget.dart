@@ -1,0 +1,1128 @@
+import 'package:patient_enrollment_program/custom_code/services/twilio_client_manager.dart';
+import '/backend/api_requests/api_calls.dart';
+import '/flutter_flow/flutter_flow_data_table.dart';
+import '/flutter_flow/flutter_flow_icon_button.dart';
+import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/flutter_flow_widgets.dart';
+import '/main/admin/manage_c_s/add_c_s/add_c_s_widget.dart';
+import '/main/admin/manage_c_s/update_c_s/update_c_s_widget.dart';
+import '/custom_code/actions/index.dart' as actions;
+import '/flutter_flow/custom_functions.dart' as functions;
+import '/index.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'view_c_s_model.dart';
+export 'view_c_s_model.dart';
+
+class ViewCSWidget extends StatefulWidget {
+  const ViewCSWidget({super.key});
+
+  static String routeName = 'ViewCS';
+  static String routePath = 'CSAdmin';
+
+  @override
+  State<ViewCSWidget> createState() => _ViewCSWidgetState();
+}
+
+class _ViewCSWidgetState extends State<ViewCSWidget> {
+  late ViewCSModel _model;
+
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _model = createModel(context, () => ViewCSModel());
+
+    // On page load action.
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      await actions.checkAndStoreRedirectURL();
+      await actions.loadHasuraAndLoginToken();
+      if (FFAppState().loginToken != '') {
+        FFAppState().isCSAdminView = true;
+        safeSetState(() {});
+        _model.getTransferUpdatedListSubscriptionCount =
+            await actions.getTransferredPatientListSubscription(
+          context,
+          FFAppState().hasuraToken,
+          int.parse(FFAppState().loginProfileID),
+        );
+        if (FFAppState().redirectURL != '') {
+          await actions.redirectToURL(
+            context,
+          );
+          FFAppState().deleteRedirectURL();
+          FFAppState().redirectURL = '';
+
+          safeSetState(() {});
+        }
+
+        // Initialization Twilio for Inbound and Outbound Calls
+        final twilioClientManager = TwilioClientManager();
+        String identity = FFAppState().loginEmail;  // This should come from your user's session
+
+        // Register to receive incoming calls
+        final success = await twilioClientManager.registerForIncomingCalls(identity, true);
+
+        if (success) {
+          print("Token Generated");
+        } else {
+          print("Failed to register Token");
+        }
+      } else {
+        context.goNamed(LoginWidget.routeName);
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _model.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        key: scaffoldKey,
+        backgroundColor: FlutterFlowTheme.of(context).secondary,
+        floatingActionButton: Builder(
+          builder: (context) => Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 48.0, 64.0),
+            child: FloatingActionButton(
+              onPressed: () async {
+                FFAppState().clearClinicsWithoutActiveEnrollerCache();
+                // addCOM
+                await showDialog(
+                  barrierColor: Color(0xBF14181B),
+                  context: context,
+                  builder: (dialogContext) {
+                    return Dialog(
+                      elevation: 0,
+                      insetPadding: EdgeInsets.zero,
+                      backgroundColor: Colors.transparent,
+                      alignment: AlignmentDirectional(0.0, 0.0)
+                          .resolve(Directionality.of(context)),
+                      child: GestureDetector(
+                        onTap: () {
+                          FocusScope.of(dialogContext).unfocus();
+                          FocusManager.instance.primaryFocus?.unfocus();
+                        },
+                        child: Container(
+                          height: 480.0,
+                          width: 620.0,
+                          child: AddCSWidget(),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              backgroundColor: FlutterFlowTheme.of(context).tertiary,
+              elevation: 5.0,
+              child: Icon(
+                Icons.add,
+                color: FlutterFlowTheme.of(context).buttonText,
+                size: 24.0,
+              ),
+            ),
+          ),
+        ),
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(80.0),
+          child: AppBar(
+            backgroundColor: FlutterFlowTheme.of(context).primary,
+            automaticallyImplyLeading: false,
+            title: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Image.asset(
+                        'assets/images/primary_logo.png',
+                        width: 180.0,
+                        height: 70.0,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Align(
+                      alignment: AlignmentDirectional(0.0, 0.0),
+                      child: Padding(
+                        padding:
+                            EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 0.0),
+                        child: Text(
+                          'Care Specialist (CS) Admin',
+                          textAlign: TextAlign.center,
+                          style: FlutterFlowTheme.of(context)
+                              .headlineSmall
+                              .override(
+                                font: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.normal,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .headlineSmall
+                                      .fontStyle,
+                                ),
+                                color: FlutterFlowTheme.of(context).primaryText,
+                                letterSpacing: 0.0,
+                                fontWeight: FontWeight.normal,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .headlineSmall
+                                    .fontStyle,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Flexible(
+                  child: FFButtonWidget(
+                    onPressed: () async {
+                      var confirmDialogResponse = await showDialog<bool>(
+                            context: context,
+                            builder: (alertDialogContext) {
+                              return AlertDialog(
+                                content:
+                                    Text('Are you sure you want to sign out?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(
+                                        alertDialogContext, false),
+                                    child: Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(alertDialogContext, true),
+                                    child: Text('Confirm'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ) ??
+                          false;
+                      if (confirmDialogResponse) {
+                        FFAppState().deleteLoginToken();
+                        FFAppState().loginToken = '';
+
+                        FFAppState().deleteLoginEmail();
+                        FFAppState().loginEmail = '';
+
+                        FFAppState().deleteHasuraToken();
+                        FFAppState().hasuraToken = '';
+
+                        FFAppState().deleteLoginProfileID();
+                        FFAppState().loginProfileID = '';
+
+                        FFAppState().isCSAdminView = false;
+                        safeSetState(() {});
+
+                        context.goNamed(LoginWidget.routeName);
+
+                        await actions.clearCacheAndReloadHbox();
+                      }
+                    },
+                    text: 'SIGNOUT',
+                    options: FFButtonOptions(
+                      height: 40.0,
+                      padding:
+                          EdgeInsetsDirectional.fromSTEB(24.0, 0.0, 24.0, 0.0),
+                      iconPadding:
+                          EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                      color: FlutterFlowTheme.of(context).accent3,
+                      textStyle:
+                          FlutterFlowTheme.of(context).titleSmall.override(
+                                font: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w500,
+                                  fontStyle: FlutterFlowTheme.of(context)
+                                      .titleSmall
+                                      .fontStyle,
+                                ),
+                                color: FlutterFlowTheme.of(context).buttonText,
+                                fontSize: 12.0,
+                                letterSpacing: 0.0,
+                                fontWeight: FontWeight.w500,
+                                fontStyle: FlutterFlowTheme.of(context)
+                                    .titleSmall
+                                    .fontStyle,
+                              ),
+                      elevation: 3.0,
+                      borderSide: BorderSide(
+                        color: Colors.transparent,
+                        width: 1.0,
+                      ),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [],
+            centerTitle: false,
+            toolbarHeight: 80.0,
+            elevation: 2.0,
+          ),
+        ),
+        body: SafeArea(
+          top: true,
+          child: FutureBuilder<ApiCallResponse>(
+            future: FFAppState().careSpecialistList(
+              requestFn: () => GQLgetByFunctionCall.call(
+                hasuraToken: FFAppState().hasuraToken,
+                requestBody: functions.getCareSpecialistDetails().toString(),
+              ),
+            ),
+            builder: (context, snapshot) {
+              // Customize what your widget looks like when it's loading.
+              if (!snapshot.hasData) {
+                return Center(
+                  child: SizedBox(
+                    width: 50.0,
+                    height: 50.0,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        FlutterFlowTheme.of(context).primary,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              final containerGQLgetByFunctionResponse = snapshot.data!;
+
+              return AnimatedContainer(
+                duration: Duration(milliseconds: 390),
+                curve: Curves.easeIn,
+                decoration: BoxDecoration(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Padding(
+                      padding:
+                          EdgeInsetsDirectional.fromSTEB(20.0, 20.0, 20.0, 0.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          InkWell(
+                            splashColor: Colors.transparent,
+                            focusColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            onTap: () async {
+                              context.pushNamed(GSListViewWidget.routeName);
+                            },
+                            child: Container(
+                              width: 190.0,
+                              height: 42.0,
+                              decoration: BoxDecoration(
+                                color: FlutterFlowTheme.of(context).tertiary,
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsetsDirectional.fromSTEB(
+                                    10.0, 0.0, 15.0, 0.0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.max,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Align(
+                                      alignment:
+                                          AlignmentDirectional(-1.0, 0.0),
+                                      child: Icon(
+                                        Icons.search,
+                                        color: FlutterFlowTheme.of(context)
+                                            .buttonText,
+                                        size: 24.0,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          10.0, 0.0, 0.0, 0.0),
+                                      child: Text(
+                                        'Search Patients',
+                                        style: FlutterFlowTheme.of(context)
+                                            .titleSmall
+                                            .override(
+                                              font: GoogleFonts.poppins(
+                                                fontWeight:
+                                                    FlutterFlowTheme.of(context)
+                                                        .titleSmall
+                                                        .fontWeight,
+                                                fontStyle:
+                                                    FlutterFlowTheme.of(context)
+                                                        .titleSmall
+                                                        .fontStyle,
+                                              ),
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .buttonText,
+                                              letterSpacing: 0.0,
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .titleSmall
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .titleSmall
+                                                      .fontStyle,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                                12.0, 0.0, 0.0, 0.0),
+                            child: Stack(
+                              alignment: AlignmentDirectional(1.0, -1.0),
+                              children: [
+                                FlutterFlowIconButton(
+                                  borderRadius: 8.0,
+                                  buttonSize: 60.0,
+                                  fillColor:
+                                      FlutterFlowTheme.of(context).secondary,
+                                  icon: Icon(
+                                    Icons.notifications_active,
+                                    color: FlutterFlowTheme.of(context).info,
+                                    size: 42.0,
+                                  ),
+                                  onPressed: () async {
+                                    context.goNamed(
+                                        CSAdminTransferPatientListWidget
+                                            .routeName);
+                                  },
+                                ),
+                                Align(
+                                  alignment: AlignmentDirectional(1.0, -1.0),
+                                  child: Container(
+                                    width: 24.0,
+                                    height: 24.0,
+                                    decoration: BoxDecoration(
+                                      color: FlutterFlowTheme.of(context).error,
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      border: Border.all(
+                                        color:
+                                            FlutterFlowTheme.of(context).error,
+                                      ),
+                                    ),
+                                    child: Align(
+                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      child: Text(
+                                        valueOrDefault<String>(
+                                          FFAppState()
+                                              .transferCSRequestCount
+                                              .toString(),
+                                          '0',
+                                        ),
+                                        style: FlutterFlowTheme.of(context)
+                                            .bodyMedium
+                                            .override(
+                                              font: GoogleFonts.poppins(
+                                                fontWeight:
+                                                    FlutterFlowTheme.of(context)
+                                                        .bodyMedium
+                                                        .fontWeight,
+                                                fontStyle:
+                                                    FlutterFlowTheme.of(context)
+                                                        .bodyMedium
+                                                        .fontStyle,
+                                              ),
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .secondary,
+                                              letterSpacing: 0.0,
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .bodyMedium
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .bodyMedium
+                                                      .fontStyle,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Builder(
+                          builder: (context) {
+                            final careSpecialistList = getJsonField(
+                              containerGQLgetByFunctionResponse.jsonBody,
+                              r'''$.data.pep_vw_care_specialist_list''',
+                            ).toList();
+
+                            return FlutterFlowDataTable<dynamic>(
+                              controller: _model.viController,
+                              data: careSpecialistList,
+                              columnsBuilder: (onSortChanged) => [
+                                DataColumn2(
+                                  label: DefaultTextStyle.merge(
+                                    softWrap: true,
+                                    child: Text(
+                                      'Name',
+                                      style: FlutterFlowTheme.of(context)
+                                          .labelLarge
+                                          .override(
+                                            font: GoogleFonts.poppins(
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontStyle,
+                                            ),
+                                            letterSpacing: 0.0,
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontStyle,
+                                          ),
+                                    ),
+                                  ),
+                                  fixedWidth:
+                                      MediaQuery.sizeOf(context).width * 0.16,
+                                ),
+                                DataColumn2(
+                                  label: DefaultTextStyle.merge(
+                                    softWrap: true,
+                                    child: Text(
+                                      'Email',
+                                      style: FlutterFlowTheme.of(context)
+                                          .labelLarge
+                                          .override(
+                                            font: GoogleFonts.poppins(
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontStyle,
+                                            ),
+                                            letterSpacing: 0.0,
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontStyle,
+                                          ),
+                                    ),
+                                  ),
+                                  fixedWidth:
+                                      MediaQuery.sizeOf(context).width * 0.17,
+                                ),
+                                DataColumn2(
+                                  label: DefaultTextStyle.merge(
+                                    softWrap: true,
+                                    child: Text(
+                                      'Assigned Clinics',
+                                      style: FlutterFlowTheme.of(context)
+                                          .labelLarge
+                                          .override(
+                                            font: GoogleFonts.poppins(
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontStyle,
+                                            ),
+                                            letterSpacing: 0.0,
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontStyle,
+                                          ),
+                                    ),
+                                  ),
+                                  fixedWidth:
+                                      MediaQuery.sizeOf(context).width * 0.25,
+                                ),
+                                DataColumn2(
+                                  label: DefaultTextStyle.merge(
+                                    softWrap: true,
+                                    child: Text(
+                                      'Assigned Task(s)',
+                                      style: FlutterFlowTheme.of(context)
+                                          .labelLarge
+                                          .override(
+                                            font: GoogleFonts.poppins(
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontStyle,
+                                            ),
+                                            letterSpacing: 0.0,
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .labelLarge
+                                                    .fontStyle,
+                                          ),
+                                    ),
+                                  ),
+                                  fixedWidth:
+                                      MediaQuery.sizeOf(context).width * 0.21,
+                                ),
+                                DataColumn2(
+                                  label: DefaultTextStyle.merge(
+                                    softWrap: true,
+                                    child: Align(
+                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                      child: Text(
+                                        'Actions',
+                                        style: FlutterFlowTheme.of(context)
+                                            .labelLarge
+                                            .override(
+                                              font: GoogleFonts.poppins(
+                                                fontWeight:
+                                                    FlutterFlowTheme.of(context)
+                                                        .labelLarge
+                                                        .fontWeight,
+                                                fontStyle:
+                                                    FlutterFlowTheme.of(context)
+                                                        .labelLarge
+                                                        .fontStyle,
+                                              ),
+                                              letterSpacing: 0.0,
+                                              fontWeight:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontWeight,
+                                              fontStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .labelLarge
+                                                      .fontStyle,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                  fixedWidth:
+                                      MediaQuery.sizeOf(context).width * 0.205,
+                                ),
+                              ],
+                              dataRowBuilder: (careSpecialistListItem,
+                                      careSpecialistListIndex,
+                                      selected,
+                                      onSelectChanged) =>
+                                  DataRow(
+                                color: WidgetStateProperty.all(
+                                  careSpecialistListIndex % 2 == 0
+                                      ? FlutterFlowTheme.of(context)
+                                          .secondaryBackground
+                                      : FlutterFlowTheme.of(context)
+                                          .primaryBackground,
+                                ),
+                                cells: [
+                                  Text(
+                                    getJsonField(
+                                      careSpecialistListItem,
+                                      r'''$.full_name''',
+                                    ).toString(),
+                                    style: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .override(
+                                          font: GoogleFonts.poppins(
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                          fontStyle:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
+                                        ),
+                                  ),
+                                  SelectionArea(
+                                      child: Text(
+                                    getJsonField(
+                                      careSpecialistListItem,
+                                      r'''$.email''',
+                                    ).toString(),
+                                    style: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .override(
+                                          font: GoogleFonts.poppins(
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                          fontStyle:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
+                                        ),
+                                  )),
+                                  Text(
+                                    getJsonField(
+                                      careSpecialistListItem,
+                                      r'''$.clinic_names''',
+                                    ).toString(),
+                                    style: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .override(
+                                          font: GoogleFonts.poppins(
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                          fontStyle:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
+                                        ),
+                                  ),
+                                  Text(
+                                    () {
+                                      if (getJsonField(
+                                            careSpecialistListItem,
+                                            r'''$.deferred_task''',
+                                          ) &&
+                                          getJsonField(
+                                            careSpecialistListItem,
+                                            r'''$.follow_up''',
+                                          )) {
+                                        return 'Deferred, Follow up';
+                                      } else if (!getJsonField(
+                                            careSpecialistListItem,
+                                            r'''$.deferred_task''',
+                                          ) &&
+                                          getJsonField(
+                                            careSpecialistListItem,
+                                            r'''$.follow_up''',
+                                          )) {
+                                        return 'Follow up';
+                                      } else if (getJsonField(
+                                            careSpecialistListItem,
+                                            r'''$.deferred_task''',
+                                          ) &&
+                                          !getJsonField(
+                                            careSpecialistListItem,
+                                            r'''$.follow_up''',
+                                          )) {
+                                        return 'Deferred';
+                                      } else {
+                                        return 'No Task Assigned';
+                                      }
+                                    }(),
+                                    style: FlutterFlowTheme.of(context)
+                                        .bodyMedium
+                                        .override(
+                                          font: GoogleFonts.poppins(
+                                            fontWeight:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontWeight,
+                                            fontStyle:
+                                                FlutterFlowTheme.of(context)
+                                                    .bodyMedium
+                                                    .fontStyle,
+                                          ),
+                                          letterSpacing: 0.0,
+                                          fontWeight:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontWeight,
+                                          fontStyle:
+                                              FlutterFlowTheme.of(context)
+                                                  .bodyMedium
+                                                  .fontStyle,
+                                        ),
+                                  ),
+                                  Align(
+                                    alignment: AlignmentDirectional(0.0, 0.0),
+                                    child: Padding(
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          10.0, 0.0, 0.0, 0.0),
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Flexible(
+                                              child: Align(
+                                                alignment: AlignmentDirectional(
+                                                    -1.0, 0.0),
+                                                child: Builder(
+                                                  builder: (context) =>
+                                                      FlutterFlowIconButton(
+                                                    borderColor:
+                                                        FlutterFlowTheme.of(
+                                                                context)
+                                                            .tertiary,
+                                                    borderRadius: 20.0,
+                                                    borderWidth: 1.0,
+                                                    buttonSize: 38.0,
+                                                    fillColor:
+                                                        FlutterFlowTheme.of(
+                                                                context)
+                                                            .secondary,
+                                                    icon: Icon(
+                                                      Icons.edit,
+                                                      color:
+                                                          FlutterFlowTheme.of(
+                                                                  context)
+                                                              .tertiary,
+                                                      size: 22.0,
+                                                    ),
+                                                    onPressed: () async {
+                                                      FFAppState()
+                                                              .UpdateAvailClinics =
+                                                          jsonDecode(
+                                                              '{\"data\":{\"pep_vw_available_clinics\":[]}}');
+                                                      safeSetState(() {});
+                                                      _model.allClinics =
+                                                          await GQLgetByFunctionCall
+                                                              .call(
+                                                        hasuraToken:
+                                                            FFAppState()
+                                                                .hasuraToken,
+                                                        requestBody:
+                                                            '{\"query\":\"query MyQuery { pep_vw_available_clinics { clinic_id clinic_name patient_clinic_timezone has_active_cs } }\"}',
+                                                      );
+
+                                                      FFAppState()
+                                                              .UpdateAvailClinics =
+                                                          functions
+                                                              .getCSUpdateClinics(
+                                                                  getJsonField(
+                                                                    (_model.allClinics
+                                                                            ?.jsonBody ??
+                                                                        ''),
+                                                                    r'''$.data.pep_vw_available_clinics''',
+                                                                    true,
+                                                                  )!,
+                                                                  functions
+                                                                      .getClinicIDList(
+                                                                          getJsonField(
+                                                                        careSpecialistListItem,
+                                                                        r'''$.clinic_ids''',
+                                                                        true,
+                                                                      ))
+                                                                      .toList());
+                                                      safeSetState(() {});
+                                                      await showDialog(
+                                                        context: context,
+                                                        builder:
+                                                            (dialogContext) {
+                                                          return Dialog(
+                                                            elevation: 0,
+                                                            insetPadding:
+                                                                EdgeInsets.zero,
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .transparent,
+                                                            alignment: AlignmentDirectional(
+                                                                    0.0, 0.0)
+                                                                .resolve(
+                                                                    Directionality.of(
+                                                                        context)),
+                                                            child:
+                                                                GestureDetector(
+                                                              onTap: () {
+                                                                FocusScope.of(
+                                                                        dialogContext)
+                                                                    .unfocus();
+                                                                FocusManager
+                                                                    .instance
+                                                                    .primaryFocus
+                                                                    ?.unfocus();
+                                                              },
+                                                              child: Container(
+                                                                height: 480.0,
+                                                                width: 620.0,
+                                                                child:
+                                                                    UpdateCSWidget(
+                                                                  firstName:
+                                                                      getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.first_name''',
+                                                                  ).toString(),
+                                                                  lastName:
+                                                                      getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.last_name''',
+                                                                  ).toString(),
+                                                                  email:
+                                                                      getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.email''',
+                                                                  ).toString(),
+                                                                  clinicIDs: functions
+                                                                      .getClinicIDList(
+                                                                          getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.clinic_ids''',
+                                                                    true,
+                                                                  )),
+                                                                  careSpecialistID:
+                                                                      getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.care_specialist_id''',
+                                                                  ),
+                                                                  taskAssigned:
+                                                                      getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.deferred_task''',
+                                                                  ),
+                                                                  followUpTasks:
+                                                                      getJsonField(
+                                                                    careSpecialistListItem,
+                                                                    r'''$.follow_up''',
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      );
+
+                                                      safeSetState(() {});
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Flexible(
+                                              child: FlutterFlowIconButton(
+                                                borderColor:
+                                                    FlutterFlowTheme.of(context)
+                                                        .error,
+                                                borderRadius: 20.0,
+                                                borderWidth: 1.0,
+                                                buttonSize: 38.0,
+                                                fillColor:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondary,
+                                                icon: Icon(
+                                                  Icons.delete,
+                                                  color: FlutterFlowTheme.of(
+                                                          context)
+                                                      .error,
+                                                  size: 20.0,
+                                                ),
+                                                onPressed: () async {
+                                                  var confirmDialogResponse =
+                                                      await showDialog<bool>(
+                                                            context: context,
+                                                            builder:
+                                                                (alertDialogContext) {
+                                                              return AlertDialog(
+                                                                content: Text(
+                                                                    'Are you sure you want to delete the Care Specialist?'),
+                                                                actions: [
+                                                                  TextButton(
+                                                                    onPressed: () =>
+                                                                        Navigator.pop(
+                                                                            alertDialogContext,
+                                                                            false),
+                                                                    child: Text(
+                                                                        'Cancel'),
+                                                                  ),
+                                                                  TextButton(
+                                                                    onPressed: () =>
+                                                                        Navigator.pop(
+                                                                            alertDialogContext,
+                                                                            true),
+                                                                    child: Text(
+                                                                        'Confirm'),
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            },
+                                                          ) ??
+                                                          false;
+                                                  if (confirmDialogResponse) {
+                                                    _model.deleteCSResult =
+                                                        await PEPAPIsGroup
+                                                            .deleteCSCall
+                                                            .call(
+                                                      adminId: int.parse(
+                                                          FFAppState()
+                                                              .loginProfileID),
+                                                      authToken: FFAppState()
+                                                          .loginToken,
+                                                      careSpecialistId:
+                                                          getJsonField(
+                                                        careSpecialistListItem,
+                                                        r'''$.care_specialist_id''',
+                                                      ),
+                                                    );
+
+                                                    if ((_model.deleteCSResult
+                                                            ?.succeeded ??
+                                                        true)) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Care Specialist Deleted Succesfully.',
+                                                            style: TextStyle(
+                                                              color: FlutterFlowTheme
+                                                                      .of(context)
+                                                                  .buttonText,
+                                                            ),
+                                                          ),
+                                                          duration: Duration(
+                                                              milliseconds:
+                                                                  4000),
+                                                          backgroundColor:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .tertiary,
+                                                        ),
+                                                      );
+                                                      FFAppState()
+                                                          .clearCareSpecialistListCache();
+                                                    } else {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Deleting Care Specialist Failed.Please Try Again!',
+                                                            style: TextStyle(
+                                                              color: FlutterFlowTheme
+                                                                      .of(context)
+                                                                  .buttonText,
+                                                            ),
+                                                          ),
+                                                          duration: Duration(
+                                                              milliseconds:
+                                                                  4000),
+                                                          backgroundColor:
+                                                              FlutterFlowTheme.of(
+                                                                      context)
+                                                                  .error,
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+
+                                                  safeSetState(() {});
+                                                },
+                                              ),
+                                            ),
+                                          ].divide(SizedBox(width: 12.0)),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ].map((c) => DataCell(c)).toList(),
+                              ),
+                              paginated: true,
+                              selectable: false,
+                              hidePaginator: false,
+                              showFirstLastButtons: false,
+                              headingRowHeight: 56.0,
+                              dataRowHeight: 48.0,
+                              columnSpacing: 20.0,
+                              headingRowColor:
+                                  FlutterFlowTheme.of(context).primary,
+                              borderRadius: BorderRadius.circular(8.0),
+                              addHorizontalDivider: true,
+                              addTopAndBottomDivider: false,
+                              hideDefaultHorizontalDivider: true,
+                              horizontalDividerColor:
+                                  FlutterFlowTheme.of(context)
+                                      .secondaryBackground,
+                              horizontalDividerThickness: 1.0,
+                              addVerticalDivider: false,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}

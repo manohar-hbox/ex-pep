@@ -1,0 +1,5 @@
+{
+  "baseUrl": "https://partner.hbox.ai",
+"graphQLBaseURL": "https://graphql-prod.hbox.ai",
+"websocketGraphQLSubscriptionURL": "wss://graphql-prod.hbox.ai/v1/graphql"
+}
